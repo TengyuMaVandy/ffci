@@ -1,0 +1,21 @@
+{% extends "ci_account/base.html" %}
+
+{% load i18n %}
+{% load bootstrap %}
+
+{% block body_class %}account account-github-repos{% endblock %}
+
+{% block head_title %}{% trans "Github Repos" %}{% endblock %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-md-5">
+            <form method="POST" action="{% url "account_github_repos" %}">
+                <legend>{% trans "Github Repos" %}</legend>
+                {% csrf_token %}
+                {{ form|bootstrap }}
+                <button class="btn btn-primary" type="submit">{% trans "Repos & Hooks" %}</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "theme_bootstrap/base.html" %}
+
+{% load staticfiles %}
+{% load metron_tags %}
+{% load i18n %}
+
+
+{% block styles %}
+    {% include "moleculeci/_styles.html" %}
+{% endblock %}
+
+{% block site_brand %}
+    <a class="navbar-brand" href="{% url "home" %}">Molecule CI</a>
+{% endblock %}
+
+{% block extra_head_base %}
+    {% block extra_head %}{% endblock %}
+{% endblock %}
+
+
+{% block footer %}
+    {% include "moleculeci/_footer.html" %}
+{% endblock %}
+
+
+{% block scripts %}
+    {% include "moleculeci/_scripts.html" %}
+{% endblock %}
+
+
+{% block extra_body_base %}
+    {% analytics %}
+    {% block extra_body %}{% endblock %}
+{% endblock %}

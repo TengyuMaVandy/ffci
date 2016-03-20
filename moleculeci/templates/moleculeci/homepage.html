@@ -1,0 +1,76 @@
+{% extends "moleculeci/../site_base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}molecule-ci{% endblock %}
+
+{% block body_class %}home{% endblock %}
+
+{% block body_base %}
+    <section class="jumbotron">
+        <div class="container">
+            {% include "_messages.html" %}
+            <h1>{% blocktrans %}Welcome to<br>Molecule CI{% endblocktrans %}</h1>
+            <p>
+                {% blocktrans %}
+                Development of a Software Framework for Formalizing Forcefield Atom-Typing for Molecular Simulation.
+                    You just need combine your molecule github repo with this Molecule CI by github webhook which is
+                    very simple. And it's time to create your own account here and start an amazing molecular
+                    simulation travel.
+                {% endblocktrans %}
+            </p>
+            {% if not user.is_authenticated %}
+            {% url "account_login" as login_url %}
+            {% url "account_signup" as signup_url %}
+            <p>{% blocktrans %}You can <a href="{{ login_url }}" class="btn btn-default">Log In</a> or <a href="{{ signup_url }}" class="btn btn-primary">Sign Up</a> to try out the site.{% endblocktrans %}</p>
+            {% endif %}
+        </div>
+    </section>
+    <section>
+        <div class="container">
+            <h2 class="text-center">{% blocktrans %}What is Molecule CI?{% endblocktrans %}</h2>
+            <p class="lead">
+                {% blocktrans %}
+                <b>Molecule CI</b> proposes to establish a formalism to express the chemical context for which a
+                    particular forcefield parameter is applicable (i.e., forcefield usage semantics) and an atom-typing
+                    tool that interprets this formalism to generate forcefield parameterizations that are provably
+                    correct.
+                {% endblocktrans %}
+            </p>
+            <div class="feature-columns">
+                <div>
+                    <i class="fa fa-cubes fa-3x"></i><br>
+                    {% blocktrans %}
+                    <b>Key role</b> Molecular simulation plays a key role in understanding the atomistic and molecular
+                        level interactions that underlie many natural and man-made materials and processes.
+                    {% endblocktrans %}
+                </div>
+                <div>
+                    <i class="fa fa-puzzle-piece fa-3x"></i><br>
+                    {% blocktrans %}
+                    <b>Easy to use</b> Create your Molecule CI account. Combine it with your molecule repo.
+                        Then you are done!
+                    {% endblocktrans %}
+                </div>
+                <div>
+                    <i class="fa fa-tint fa-3x"></i><br>
+                    {% blocktrans %}
+                    <b>Authorization</b> We will pull down your molecule github repo and
+                        use your Molecule CI to do some simulation.
+                    {% endblocktrans %}
+                </div>
+            </div>
+        </div>
+    </section>
+    <section>
+        <div class="container">
+            <p class="lead text-center">
+                {% blocktrans %}
+                See <a href="http://www.nsf.gov/awardsearch/showAward?AWD_ID=1535150&HistoricalAwards=false">
+                    Molecule CI</a>
+                for more information.
+                {% endblocktrans %}
+            </p>
+        </div>
+    </section>
+{% endblock %}
