@@ -1004,7 +1004,7 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
         i = 0
         for repo in g.get_user().get_repos(type="owner"):
             # print(g.get_user().get_repo(repo.name).get_hooks())
-            repos_field["github_repos%d" % i] = repo.name
+            repos_field["repos%d" % i] = repo.name
             hooks_list = [hooks_list for hooks_list in g.get_user().get_repo(repo.name).get_hooks()]
             if "repos%d_hook" % i in form.cleaned_data:
                 # fields["github_repos%d_hook" % i] = form.cleaned_data["repos%d_hook" % i]  test new model
