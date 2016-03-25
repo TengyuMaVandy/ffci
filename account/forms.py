@@ -233,9 +233,11 @@ class GithubReposForm(forms.Form):  # need find an efficient and dynamic way to 
         i = 0
         for repos in repos_list:
             self.fields["repos%d" % i] = forms.CharField(label='', max_length=255, required=False,
-                                                          initial=repos.repos_name,
-                                                          widget=forms.TextInput(attrs={'readonly': 'readonly'}))
-            self.fields["repos%d_hook" % i] = forms.BooleanField(label='Hooked', required=False, initial=False)
+                                                         initial=repos.repos_name,
+                                                         widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+            repos_hook = GithubHooks.objects.get(github_repos=repos)
+            self.fields["repos%d_hook" % i] = forms.BooleanField(label='Hooked', required=False,
+                                                                 initial=repos_hook.repos_hook)
             i += 1
 
 
@@ -264,139 +266,18 @@ def get_command_choices():
 class GithubHooksForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
         super(GithubHooksForm, self).__init__(*args, **kwargs)
-        # hook1 = hook2 = hook3 = hook4 = hook5 = hook6 = hook7 = hook8 = hook9 = hook10 = \
-        #     hook11 = hook12 = hook13 = hook14 = hook15 = hook16 = hook17 = hook18 = hook19 = hook20 = False
-        # repo1 = repo2 = repo3 = repo4 = repo5 = repo6 = repo7 = repo8 = repo9 = repo10 = \
-        #     repo11 = repo12 = repo13 = repo14 = repo15 = repo16 = repo17 = repo18 = repo19 = repo20 = "No repo"
-        # hook1_choices = hook2_choices = hook3_choices = hook4_choices = hook5_choices = hook6_choices = \
-        #     hook7_choices = hook8_choices = hook9_choices = hook10_choices = hook11_choices = hook12_choices = \
-        #     hook13_choices = hook14_choices = hook15_choices = hook16_choices = hook17_choices = hook18_choices = \
-        #     hook19_choices = hook20_choices = ("False", "No repo")
         hooks_list = [hooks_list for hooks_list in GithubHooks.objects.filter(github_repos__user=user)]
         final_choices = ()
         i = 0
         for hooks in hooks_list:
             if hooks.repos_hook:
-                print(hooks.repos_hook)
-                print(GithubRepos.objects.get(github_hooks=hooks))
-                hooks_choices = ("repos%d" % i, GithubRepos.objects.get(github_hooks=hooks))
-                final_choices = final_choices + ("repos%d" % i, hooks_choices)
+                # print(hooks.repos_hook)
+                # print(GithubRepos.objects.get(github_hooks=hooks))
+                hooks_choices = ("repos%d" % i, GithubRepos.objects.get(github_hooks=hooks).repos_name)
+                final_choices = final_choices + (hooks_choices,)
                 i += 1
-
-        # ***** 03/24/16 need continue from here. Aim: create github_hooks dynamically
-        #     hook1 = o.github_repos1_hook
-        #     hook2 = o.github_repos2_hook
-        #     hook3 = o.github_repos3_hook
-        #     hook4 = o.github_repos4_hook
-        #     hook5 = o.github_repos5_hook
-        #     hook6 = o.github_repos6_hook
-        #     hook7 = o.github_repos7_hook
-        #     hook8 = o.github_repos8_hook
-        #     hook9 = o.github_repos9_hook
-        #     hook10 = o.github_repos10_hook
-        #     hook11 = o.github_repos11_hook
-        #     hook12 = o.github_repos12_hook
-        #     hook13 = o.github_repos13_hook
-        #     hook14 = o.github_repos14_hook
-        #     hook15 = o.github_repos15_hook
-        #     hook16 = o.github_repos16_hook
-        #     hook17 = o.github_repos17_hook
-        #     hook18 = o.github_repos18_hook
-        #     hook19 = o.github_repos19_hook
-        #     hook20 = o.github_repos20_hook
-        #     repo1 = o.github_repos1
-        #     repo2 = o.github_repos2
-        #     repo3 = o.github_repos3
-        #     repo4 = o.github_repos4
-        #     repo5 = o.github_repos5
-        #     repo6 = o.github_repos6
-        #     repo7 = o.github_repos7
-        #     repo8 = o.github_repos8
-        #     repo9 = o.github_repos9
-        #     repo10 = o.github_repos10
-        #     repo11 = o.github_repos11
-        #     repo12 = o.github_repos12
-        #     repo13 = o.github_repos13
-        #     repo14 = o.github_repos14
-        #     repo15 = o.github_repos15
-        #     repo16 = o.github_repos16
-        #     repo17 = o.github_repos17
-        #     repo18 = o.github_repos18
-        #     repo19 = o.github_repos19
-        #     repo20 = o.github_repos20
-        # final_choices = ()
-        # if hook1:
-        #     hook1_choices = ("repo1", repo1)
-        #     final_choices = final_choices + (hook1_choices,)
-        # if hook2:
-        #     hook2_choices = ("repo2", repo2)
-        #     final_choices = final_choices + (hook2_choices,)
-        # if hook3:
-        #     hook3_choices = ("repo3", repo3)
-        #     final_choices = final_choices + (hook3_choices,)
-        # if hook4:
-        #     hook1_choices = ("repo4", repo4)
-        #     final_choices = final_choices + (hook1_choices,)
-        # if hook5:
-        #     hook2_choices = ("repo5", repo5)
-        #     final_choices = final_choices + (hook2_choices,)
-        # if hook6:
-        #     hook3_choices = ("repo6", repo6)
-        #     final_choices = final_choices + (hook3_choices,)
-        # if hook7:
-        #     hook1_choices = ("repo7", repo7)
-        #     final_choices = final_choices + (hook1_choices,)
-        # if hook8:
-        #     hook2_choices = ("repo8", repo8)
-        #     final_choices = final_choices + (hook2_choices,)
-        # if hook9:
-        #     hook3_choices = ("repo9", repo9)
-        #     final_choices = final_choices + (hook3_choices,)
-        # if hook10:
-        #     hook1_choices = ("repo10", repo10)
-        #     final_choices = final_choices + (hook1_choices,)
-        # if hook11:
-        #     hook2_choices = ("repo11", repo11)
-        #     final_choices = final_choices + (hook2_choices,)
-        # if hook12:
-        #     hook3_choices = ("repo12", repo12)
-        #     final_choices = final_choices + (hook3_choices,)
-        # if hook13:
-        #     hook1_choices = ("repo13", repo13)
-        #     final_choices = final_choices + (hook1_choices,)
-        # if hook14:
-        #     hook2_choices = ("repo14", repo14)
-        #     final_choices = final_choices + (hook2_choices,)
-        # if hook15:
-        #     hook3_choices = ("repo15", repo15)
-        #     final_choices = final_choices + (hook3_choices,)
-        # if hook16:
-        #     hook1_choices = ("repo16", repo16)
-        #     final_choices = final_choices + (hook1_choices,)
-        # if hook17:
-        #     hook2_choices = ("repo17", repo17)
-        #     final_choices = final_choices + (hook2_choices,)
-        # if hook18:
-        #     hook3_choices = ("repo18", repo18)
-        #     final_choices = final_choices + (hook3_choices,)
-        # if hook19:
-        #     hook1_choices = ("repo19", repo19)
-        #     final_choices = final_choices + (hook1_choices,)
-        # if hook20:
-        #     hook2_choices = ("repo20", repo20)
-        #     final_choices = final_choices + (hook2_choices,)
-        # print(final_choices)
-        # final_choices = (
-        #     hook1_choices,
-        #     hook2_choices,
-        #     hook3_choices,
-        # )
         self.fields["github_hooked_repo"] = forms.ChoiceField(choices=final_choices, required=False)
         self.fields["github_hooked_command"] = forms.ChoiceField(choices=get_command_choices(), required=False)
-        # [(o.github_repos1_hook, o.github_repos1) for o in Account.objects.filter(user=user)]
-
-        # github_hooked_repo = forms.ChoiceField(choices=get_repo_choices())
-        # github_hooks_command = forms.ChoiceField(choices=get_command_choices())
 
 
 class GithubHooksBackendForm(forms.Form):
