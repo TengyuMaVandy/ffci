@@ -884,10 +884,9 @@ class GithubAuthView(FormView):  # need modify GithubAuthView in the future
         return default_redirect(self.request, fallback_url, **kwargs)
 
 
-class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/16
+class GithubReposView(FormView):  # handle github repos dynamically
     template_name = "ci_account/github_repos.html"
     form_class = GithubReposForm
-    # second_form_class = GithubReposHooksForm  # try to modify the forms' layout
     redirect_field_name = "next"
     messages = {
         "Github_Repos_updated": {
@@ -954,6 +953,7 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
         hook_events = ["push", "pull_request"]
         repos_field = {}
         i = 0
+        # handle webhooks with github api. Refresh hooked situation to github.
         for repo in g.get_user().get_repos(type="owner"):
             # print(g.get_user().get_repo(repo.name).get_hooks())
             repos_field["repos%d" % i] = repo.name
@@ -992,14 +992,12 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
                         else:
                             print("hook.config doesn't have url")
             i += 1
-            # g.get_user().get_repo()
-            # GithubReposForm.github_repos1_hook.label = repo.name
         repos_name = [repos.repos_name for repos in GithubRepos.objects.filter(user=self.request.user)]
         # repos = [repos for repos in GithubRepos.objects.filter(user=self.request.user)]
         if repos_field:
             for repos in GithubRepos.objects.filter(user=self.request.user):
                 for k, v in repos_field.items():
-                    print(k, v)
+                    # print(k, v)
                     if v in repos_name:
                         if v == repos.repos_name:
                             setattr(repos, k, v)
@@ -1022,7 +1020,7 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
         return default_redirect(self.request, fallback_url, **kwargs)
 
 
-class GithubHooksView(FormView):  # Add GithubHooksView to handle github webhook 3/14/16
+class GithubHooksView(FormView):  # Handle github hooks dynamically
     template_name = "ci_account/github_hooks.html"
     form_class = GithubHooksForm
     # second_form_class = GithubReposHooksForm  # try to modify the forms' layout
