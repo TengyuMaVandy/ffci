@@ -278,8 +278,8 @@ class GithubHooksForm(forms.Form):
         for hooks in hooks_list:
             if hooks.repos_hook:
                 print(hooks.repos_hook)
-                print(GithubRepos.objects.get(githubhooks=hooks))
-                hooks_choices = ("repos%d" % i, GithubRepos.objects.get(githubhooks=hooks))
+                print(GithubRepos.objects.get(github_hooks=hooks))
+                hooks_choices = ("repos%d" % i, GithubRepos.objects.get(github_hooks=hooks))
                 final_choices = final_choices + ("repos%d" % i, hooks_choices)
                 i += 1
 
