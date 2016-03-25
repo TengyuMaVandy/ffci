@@ -35,7 +35,8 @@ from account.forms import ChangePasswordForm, PasswordResetForm, PasswordResetTo
 from account.forms import SettingsForm
 from account.hooks import hookset
 from account.mixins import LoginRequiredMixin
-from account.models import SignupCode, EmailAddress, EmailConfirmation, Account, AccountDeletion
+from account.models import SignupCode, EmailAddress, EmailConfirmation, Account, AccountDeletion, GithubRepos, \
+    GithubHooks
 from account.utils import default_redirect, get_form_data
 
 from github import Github
@@ -65,6 +66,7 @@ class SignupView(FormView):
 
     def __init__(self, *args, **kwargs):
         self.created_user = None
+        self.created_account = None
         kwargs["signup_code"] = None
         super(SignupView, self).__init__(*args, **kwargs)
 
@@ -150,8 +152,9 @@ class SignupView(FormView):
         if settings.ACCOUNT_EMAIL_CONFIRMATION_REQUIRED and not email_address.verified:
             self.created_user.is_active = False
             self.created_user.save()
-        self.create_account(form)
-        # self.create_github_repos(form)
+        self.created_account = self.create_account(form)
+        self.create_github_repos(form)
+        self.create_github_hooks(form)
         self.after_signup(form)
         # print(self.created_user.birthday)
         if settings.ACCOUNT_EMAIL_CONFIRMATION_EMAIL and not email_address.verified:
@@ -209,10 +212,24 @@ class SignupView(FormView):
         return user
 
     def create_account(self, form):
-        return Account.create(request=self.request, user=self.created_user, create_email=False)
+        github_token = form.cleaned_data.get("github_token")
+        return Account.create(request=self.request, user=self.created_user, github_token=github_token,
+                              create_email=False)
 
-    # def create_github_repos(self, form):
-    #     return GithubRepos.create(request=self.request, user=self.created_user)
+    def create_github_repos(self, form):
+        account = self.created_account
+        github_token = account.github_token
+        g = Github(login_or_token=github_token)
+        # create all of the user's github repositories into database
+        for repo in g.get_user().get_repos(type="owner"):
+            print(repo.name)
+            GithubRepos.create(user=self.created_user, repos_name=repo.name)
+
+    def create_github_hooks(self, form):
+        # create hooks info for each repos related to the user
+        for github_repos in GithubRepos.objects.filter(user=self.created_user):
+            print(github_repos)
+            GithubHooks.create(github_repos=github_repos, repos_hook=False)
 
     def generate_username(self, form):
         raise NotImplementedError(
@@ -879,6 +896,16 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
         },
     }
 
+    def get(self, request, *args, **kwargs):
+        form = self.form_class(user=self.request.user, initial=self.initial)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(self.request.user, request.POST)
+        if form.is_valid():
+            self.form_valid(form)
+        return render(request, self.template_name, {'form': form})
+
     def get_initial(self):  # need more efficient and dynamic way to do this!
         initial = super(GithubReposView, self).get_initial()
         # use original way
@@ -886,48 +913,48 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
         # initial["github_repos_hook"] = self.request.user.githubrepos.github_repos_hook
         # """ try new class GithubRepos
         # initial repos
-        initial["github_repos1"] = self.request.user.account.github_repos1
-        initial["github_repos2"] = self.request.user.account.github_repos2
-        initial["github_repos3"] = self.request.user.account.github_repos3
-        initial["github_repos4"] = self.request.user.account.github_repos4
-        initial["github_repos5"] = self.request.user.account.github_repos5
-        initial["github_repos6"] = self.request.user.account.github_repos6
-        initial["github_repos7"] = self.request.user.account.github_repos7
-        initial["github_repos8"] = self.request.user.account.github_repos8
-        initial["github_repos9"] = self.request.user.account.github_repos9
-        initial["github_repos10"] = self.request.user.account.github_repos10
-        initial["github_repos11"] = self.request.user.account.github_repos11
-        initial["github_repos12"] = self.request.user.account.github_repos12
-        initial["github_repos13"] = self.request.user.account.github_repos13
-        initial["github_repos14"] = self.request.user.account.github_repos14
-        initial["github_repos15"] = self.request.user.account.github_repos15
-        initial["github_repos16"] = self.request.user.account.github_repos16
-        initial["github_repos17"] = self.request.user.account.github_repos17
-        initial["github_repos18"] = self.request.user.account.github_repos18
-        initial["github_repos19"] = self.request.user.account.github_repos19
-        initial["github_repos20"] = self.request.user.account.github_repos20
-        # try ComboField Doesn't work
-        # initial repos _hookhook
-        initial["github_repos1_hook"] = self.request.user.account.github_repos1_hook
-        initial["github_repos2_hook"] = self.request.user.account.github_repos2_hook
-        initial["github_repos3_hook"] = self.request.user.account.github_repos3_hook
-        initial["github_repos4_hook"] = self.request.user.account.github_repos4_hook
-        initial["github_repos5_hook"] = self.request.user.account.github_repos5_hook
-        initial["github_repos6_hook"] = self.request.user.account.github_repos6_hook
-        initial["github_repos7_hook"] = self.request.user.account.github_repos7_hook
-        initial["github_repos8_hook"] = self.request.user.account.github_repos8_hook
-        initial["github_repos9_hook"] = self.request.user.account.github_repos9_hook
-        initial["github_repos10_hook"] = self.request.user.account.github_repos10_hook
-        initial["github_repos11_hook"] = self.request.user.account.github_repos11_hook
-        initial["github_repos12_hook"] = self.request.user.account.github_repos12_hook
-        initial["github_repos13_hook"] = self.request.user.account.github_repos13_hook
-        initial["github_repos14_hook"] = self.request.user.account.github_repos14_hook
-        initial["github_repos15_hook"] = self.request.user.account.github_repos15_hook
-        initial["github_repos16_hook"] = self.request.user.account.github_repos16_hook
-        initial["github_repos17_hook"] = self.request.user.account.github_repos17_hook
-        initial["github_repos18_hook"] = self.request.user.account.github_repos18_hook
-        initial["github_repos19_hook"] = self.request.user.account.github_repos19_hook
-        initial["github_repos20_hook"] = self.request.user.account.github_repos20_hook
+        # initial["github_repos1"] = self.request.user.account.github_repos1
+        # initial["github_repos2"] = self.request.user.account.github_repos2
+        # initial["github_repos3"] = self.request.user.account.github_repos3
+        # initial["github_repos4"] = self.request.user.account.github_repos4
+        # initial["github_repos5"] = self.request.user.account.github_repos5
+        # initial["github_repos6"] = self.request.user.account.github_repos6
+        # initial["github_repos7"] = self.request.user.account.github_repos7
+        # initial["github_repos8"] = self.request.user.account.github_repos8
+        # initial["github_repos9"] = self.request.user.account.github_repos9
+        # initial["github_repos10"] = self.request.user.account.github_repos10
+        # initial["github_repos11"] = self.request.user.account.github_repos11
+        # initial["github_repos12"] = self.request.user.account.github_repos12
+        # initial["github_repos13"] = self.request.user.account.github_repos13
+        # initial["github_repos14"] = self.request.user.account.github_repos14
+        # initial["github_repos15"] = self.request.user.account.github_repos15
+        # initial["github_repos16"] = self.request.user.account.github_repos16
+        # initial["github_repos17"] = self.request.user.account.github_repos17
+        # initial["github_repos18"] = self.request.user.account.github_repos18
+        # initial["github_repos19"] = self.request.user.account.github_repos19
+        # initial["github_repos20"] = self.request.user.account.github_repos20
+        # # try ComboField Doesn't work
+        # # initial repos _hookhook
+        # initial["github_repos1_hook"] = self.request.user.account.github_repos1_hook
+        # initial["github_repos2_hook"] = self.request.user.account.github_repos2_hook
+        # initial["github_repos3_hook"] = self.request.user.account.github_repos3_hook
+        # initial["github_repos4_hook"] = self.request.user.account.github_repos4_hook
+        # initial["github_repos5_hook"] = self.request.user.account.github_repos5_hook
+        # initial["github_repos6_hook"] = self.request.user.account.github_repos6_hook
+        # initial["github_repos7_hook"] = self.request.user.account.github_repos7_hook
+        # initial["github_repos8_hook"] = self.request.user.account.github_repos8_hook
+        # initial["github_repos9_hook"] = self.request.user.account.github_repos9_hook
+        # initial["github_repos10_hook"] = self.request.user.account.github_repos10_hook
+        # initial["github_repos11_hook"] = self.request.user.account.github_repos11_hook
+        # initial["github_repos12_hook"] = self.request.user.account.github_repos12_hook
+        # initial["github_repos13_hook"] = self.request.user.account.github_repos13_hook
+        # initial["github_repos14_hook"] = self.request.user.account.github_repos14_hook
+        # initial["github_repos15_hook"] = self.request.user.account.github_repos15_hook
+        # initial["github_repos16_hook"] = self.request.user.account.github_repos16_hook
+        # initial["github_repos17_hook"] = self.request.user.account.github_repos17_hook
+        # initial["github_repos18_hook"] = self.request.user.account.github_repos18_hook
+        # initial["github_repos19_hook"] = self.request.user.account.github_repos19_hook
+        # initial["github_repos20_hook"] = self.request.user.account.github_repos20_hook
         # """
         return initial
 
@@ -966,29 +993,27 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
         account = self.request.user.account
         github_token = account.github_token
         g = Github(login_or_token=github_token)
-        """
-        create hook parameter
-        """
+        # create hook parameter
         server_url = "http://8f2e6dbe.ngrok.io/hooks/"  # we need change server_url when our server's url changed
         hook_config_url_list = []  # initial hook config url list in order to check already existed hooks
         hook_name = "web"
         hook_config = {"url": server_url, "content_type": "json"}
         hook_active = True
         hook_events = ["push", "pull_request"]
-        fields = {}
+        repos_field = {}
         i = 0
-        for repo in g.get_user().get_repos():
-            i += 1
-            fields["github_repos%d" % i] = repo.name
-            hook_list = [hook_list for hook_list in g.get_user().get_repo(repo.name).get_hooks()]
-            if "github_repos%d_hook" % i in form.cleaned_data:
-                fields["github_repos%d_hook" % i] = form.cleaned_data["github_repos%d_hook" % i]
-                if form.cleaned_data["github_repos%d_hook" % i]:
+        for repo in g.get_user().get_repos(type="owner"):
+            # print(g.get_user().get_repo(repo.name).get_hooks())
+            repos_field["github_repos%d" % i] = repo.name
+            hooks_list = [hooks_list for hooks_list in g.get_user().get_repo(repo.name).get_hooks()]
+            if "repos%d_hook" % i in form.cleaned_data:
+                # fields["github_repos%d_hook" % i] = form.cleaned_data["repos%d_hook" % i]  test new model
+                if form.cleaned_data["repos%d_hook" % i]:
                     print("create hook")
                     print("check existed hooks")
                     """ handle hook automatically with github """
-                    if [hook for hook in hook_list]:  # check existed hooks
-                        for hook in hook_list:  # check existed hooks with our server
+                    if [hook for hook in hooks_list]:  # check existed hooks
+                        for hook in hooks_list:  # check existed hooks with our server
                             hook_config_url_list = hook_config_url_list + [hook.config["url"], ]
                         print(hook_config_url_list)
                         if server_url in hook_config_url_list:
@@ -1004,7 +1029,7 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
                         print("no hooks before, create successfully")
                 else:
                     print("delete hook")
-                    for hook in hook_list:  # handle delete hooks
+                    for hook in hooks_list:  # handle delete hooks
                         # print(hook.config)
                         if "url" in hook.config:
                             if server_url == hook.config["url"]:
@@ -1014,12 +1039,26 @@ class GithubReposView(FormView):  # need modify GithubRepos in the future 3/13/1
                                 print("no hook to delete")
                         else:
                             print("hook.config doesn't have url")
-                            # g.get_user().get_repo()
-                            # GithubReposForm.github_repos1_hook.label = repo.name
-        if fields:
-            for k, v in fields.items():
-                setattr(account, k, v)
-            account.save()
+            i += 1
+            # g.get_user().get_repo()
+            # GithubReposForm.github_repos1_hook.label = repo.name
+        repos_name = [repos.repos_name for repos in GithubRepos.objects.filter(user=self.request.user)]
+        # repos = [repos for repos in GithubRepos.objects.filter(user=self.request.user)]
+        if repos_field:
+            for repos in GithubRepos.objects.filter(user=self.request.user):
+                for k, v in repos_field.items():
+                    print(k, v)
+                    if v in repos_name:
+                        if v == repos.repos_name:
+                            setattr(repos, k, v)
+                            repos_hook = GithubHooks.objects.get(github_repos=repos)
+                            repos_hook.repos_hook = form.cleaned_data["%s_hook" % k]
+                            repos_hook.save()
+                    else:
+                        github_repos = GithubRepos.create(user=self.request.user, repos_name=v)
+                        repos_hook = form.cleaned_data["%s_hook" % k]
+                        GithubHooks.create(github_repos=github_repos, repos_hook=repos_hook)
+                repos.save()
 
     def get_redirect_field_name(self):
         return self.redirect_field_name
@@ -1054,57 +1093,7 @@ class GithubHooksView(FormView):  # Add GithubHooksView to handle github webhook
         return render(request, self.template_name, {'form': form})
 
     def get_initial(self):  # need more efficient and dynamic way to do this!
-
         initial = super(GithubHooksView, self).get_initial()
-        """ we don't need initial right now
-        # use original way
-        # initial["github_repos"] = self.request.user.githubrepos.github_repos
-        # initial["github_repos_hook"] = self.request.user.githubrepos.github_repos_hook
-        # try new class GithubRepos
-        # initial repos
-        initial["github_repos1"] = self.request.user.account.github_repos1
-        initial["github_repos2"] = self.request.user.account.github_repos2
-        initial["github_repos3"] = self.request.user.account.github_repos3
-        initial["github_repos4"] = self.request.user.account.github_repos4
-        initial["github_repos5"] = self.request.user.account.github_repos5
-        initial["github_repos6"] = self.request.user.account.github_repos6
-        initial["github_repos7"] = self.request.user.account.github_repos7
-        initial["github_repos8"] = self.request.user.account.github_repos8
-        initial["github_repos9"] = self.request.user.account.github_repos9
-        initial["github_repos10"] = self.request.user.account.github_repos10
-        initial["github_repos11"] = self.request.user.account.github_repos11
-        initial["github_repos12"] = self.request.user.account.github_repos12
-        initial["github_repos13"] = self.request.user.account.github_repos13
-        initial["github_repos14"] = self.request.user.account.github_repos14
-        initial["github_repos15"] = self.request.user.account.github_repos15
-        initial["github_repos16"] = self.request.user.account.github_repos16
-        initial["github_repos17"] = self.request.user.account.github_repos17
-        initial["github_repos18"] = self.request.user.account.github_repos18
-        initial["github_repos19"] = self.request.user.account.github_repos19
-        initial["github_repos20"] = self.request.user.account.github_repos20
-        # try ComboField Doesn't work
-        # initial repos _hookhook
-        initial["github_repos1_hook"] = self.request.user.account.github_repos1_hook
-        initial["github_repos2_hook"] = self.request.user.account.github_repos2_hook
-        initial["github_repos3_hook"] = self.request.user.account.github_repos3_hook
-        initial["github_repos4_hook"] = self.request.user.account.github_repos4_hook
-        initial["github_repos5_hook"] = self.request.user.account.github_repos5_hook
-        initial["github_repos6_hook"] = self.request.user.account.github_repos6_hook
-        initial["github_repos7_hook"] = self.request.user.account.github_repos7_hook
-        initial["github_repos8_hook"] = self.request.user.account.github_repos8_hook
-        initial["github_repos9_hook"] = self.request.user.account.github_repos9_hook
-        initial["github_repos10_hook"] = self.request.user.account.github_repos10_hook
-        initial["github_repos11_hook"] = self.request.user.account.github_repos11_hook
-        initial["github_repos12_hook"] = self.request.user.account.github_repos12_hook
-        initial["github_repos13_hook"] = self.request.user.account.github_repos13_hook
-        initial["github_repos14_hook"] = self.request.user.account.github_repos14_hook
-        initial["github_repos15_hook"] = self.request.user.account.github_repos15_hook
-        initial["github_repos16_hook"] = self.request.user.account.github_repos16_hook
-        initial["github_repos17_hook"] = self.request.user.account.github_repos17_hook
-        initial["github_repos18_hook"] = self.request.user.account.github_repos18_hook
-        initial["github_repos19_hook"] = self.request.user.account.github_repos19_hook
-        initial["github_repos20_hook"] = self.request.user.account.github_repos20_hook
-        """
         return initial
 
     def form_valid(self, form):

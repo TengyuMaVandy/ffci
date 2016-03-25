@@ -32,47 +32,52 @@ from account.signals import signup_code_sent, signup_code_used
 from github import Github
 
 
-""" use original way
 @python_2_unicode_compatible
 class GithubRepos(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name="githubrepos", verbose_name=_("user"))
-    # github repos. need find an efficient and dynamic way
-    github_repos = models.CharField(max_length=255, null=True)
-    # repos hooks
-    github_repos_hook = models.BooleanField(default=False)
+    """
+    Github repos model. Many to one database. one user has several repos
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="github_repos", verbose_name="user",
+                             on_delete=models.CASCADE)
+    # Github repos related to the user
+    repos_name = models.CharField(max_length=255, null=True)
 
     @classmethod
-    def for_request(cls, request):
-        if request.user.is_authenticated():
-            try:
-                githubrepos = GithubRepos._default_manager.get(user=request.user)
-            except GithubRepos.DoesNotExist:
-                githubrepos = AnonymousAccount(request)
-        else:
-            account = AnonymousAccount(request)
-        return account
-
-    @classmethod
-    def create(cls, request=None, **kwargs):
-        githubrepos = cls(**kwargs)
-        githubrepos.save()
-        return githubrepos
+    def create(cls, **kwargs):
+        github_repos = cls(**kwargs)
+        github_repos.save()
+        return github_repos
 
     def __str__(self):
-        return str(self.user)
-"""
+        return "%s %s" % (str(self.user), self.repos_name)
 
 
 @python_2_unicode_compatible
-class Gitrepo(models.Model):
+class GithubHooks(models.Model):
+    """
+    Github hooks model. One to one database. one repos has one boolean hook value (hook or not).
+    """
+    github_repos = models.OneToOneField(GithubRepos, related_name="github_hooks", verbose_name="github_repos",
+                                        on_delete=models.CASCADE)
+    # Github repos hook related to repos. Boolean, 1 means hooked, 0 means not hooked.
+    repos_hook = models.BooleanField(default=False)
 
+    @classmethod
+    def create(cls, **kwargs):
+        github_repos_hook = cls(**kwargs)
+        github_repos_hook.save()
+        return github_repos_hook
 
-    github_repo = models.CharField(max_length=255, null=True)
+    def __str__(self):
+        if self.repos_hook:
+            hooked = 1
+        else:
+            hooked = 0
+        return "%s %d" % (str(self.github_repos), hooked)
 
 
 @python_2_unicode_compatible
 class Account(models.Model):
-
     user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name="account", verbose_name=_("user"))
     timezone = TimeZoneField(_("timezone"))
     language = models.CharField(
@@ -84,48 +89,49 @@ class Account(models.Model):
     birthday = models.DateField(null=True)  # add birthday here
     github_token = models.CharField(max_length=255, null=True)
     # """ try to use another class (onetoone field or foreignkey field)
-    # github repos. need find an efficient and dynamic way
-    github_repos1 = models.CharField(max_length=255, null=True)
-    github_repos2 = models.CharField(max_length=255, null=True)
-    github_repos3 = models.CharField(max_length=255, null=True)
-    github_repos4 = models.CharField(max_length=255, null=True)
-    github_repos5 = models.CharField(max_length=255, null=True)
-    github_repos6 = models.CharField(max_length=255, null=True)
-    github_repos7 = models.CharField(max_length=255, null=True)
-    github_repos8 = models.CharField(max_length=255, null=True)
-    github_repos9 = models.CharField(max_length=255, null=True)
-    github_repos10 = models.CharField(max_length=255, null=True)
-    github_repos11 = models.CharField(max_length=255, null=True)
-    github_repos12 = models.CharField(max_length=255, null=True)
-    github_repos13 = models.CharField(max_length=255, null=True)
-    github_repos14 = models.CharField(max_length=255, null=True)
-    github_repos15 = models.CharField(max_length=255, null=True)
-    github_repos16 = models.CharField(max_length=255, null=True)
-    github_repos17 = models.CharField(max_length=255, null=True)
-    github_repos18 = models.CharField(max_length=255, null=True)
-    github_repos19 = models.CharField(max_length=255, null=True)
-    github_repos20 = models.CharField(max_length=255, null=True)
-    # repos hooks
-    github_repos1_hook = models.BooleanField(default=False)
-    github_repos2_hook = models.BooleanField(default=False)
-    github_repos3_hook = models.BooleanField(default=False)
-    github_repos4_hook = models.BooleanField(default=False)
-    github_repos5_hook = models.BooleanField(default=False)
-    github_repos6_hook = models.BooleanField(default=False)
-    github_repos7_hook = models.BooleanField(default=False)
-    github_repos8_hook = models.BooleanField(default=False)
-    github_repos9_hook = models.BooleanField(default=False)
-    github_repos10_hook = models.BooleanField(default=False)
-    github_repos11_hook = models.BooleanField(default=False)
-    github_repos12_hook = models.BooleanField(default=False)
-    github_repos13_hook = models.BooleanField(default=False)
-    github_repos14_hook = models.BooleanField(default=False)
-    github_repos15_hook = models.BooleanField(default=False)
-    github_repos16_hook = models.BooleanField(default=False)
-    github_repos17_hook = models.BooleanField(default=False)
-    github_repos18_hook = models.BooleanField(default=False)
-    github_repos19_hook = models.BooleanField(default=False)
-    github_repos20_hook = models.BooleanField(default=False)
+    # github repos. need find an efficient and dynamic way --> try to use repos and hooks model
+    # github_repos1 = models.CharField(max_length=255, null=True)
+    # github_repos2 = models.CharField(max_length=255, null=True)
+    # github_repos3 = models.CharField(max_length=255, null=True)
+    # github_repos4 = models.CharField(max_length=255, null=True)
+    # github_repos5 = models.CharField(max_length=255, null=True)
+    # github_repos6 = models.CharField(max_length=255, null=True)
+    # github_repos7 = models.CharField(max_length=255, null=True)
+    # github_repos8 = models.CharField(max_length=255, null=True)
+    # github_repos9 = models.CharField(max_length=255, null=True)
+    # github_repos10 = models.CharField(max_length=255, null=True)
+    # github_repos11 = models.CharField(max_length=255, null=True)
+    # github_repos12 = models.CharField(max_length=255, null=True)
+    # github_repos13 = models.CharField(max_length=255, null=True)
+    # github_repos14 = models.CharField(max_length=255, null=True)
+    # github_repos15 = models.CharField(max_length=255, null=True)
+    # github_repos16 = models.CharField(max_length=255, null=True)
+    # github_repos17 = models.CharField(max_length=255, null=True)
+    # github_repos18 = models.CharField(max_length=255, null=True)
+    # github_repos19 = models.CharField(max_length=255, null=True)
+    # github_repos20 = models.CharField(max_length=255, null=True)
+    # # repos hooks
+    # github_repos1_hook = models.BooleanField(default=False)
+    # github_repos2_hook = models.BooleanField(default=False)
+    # github_repos3_hook = models.BooleanField(default=False)
+    # github_repos4_hook = models.BooleanField(default=False)
+    # github_repos5_hook = models.BooleanField(default=False)
+    # github_repos6_hook = models.BooleanField(default=False)
+    # github_repos7_hook = models.BooleanField(default=False)
+    # github_repos8_hook = models.BooleanField(default=False)
+    # github_repos9_hook = models.BooleanField(default=False)
+    # github_repos10_hook = models.BooleanField(default=False)
+    # github_repos11_hook = models.BooleanField(default=False)
+    # github_repos12_hook = models.BooleanField(default=False)
+    # github_repos13_hook = models.BooleanField(default=False)
+    # github_repos14_hook = models.BooleanField(default=False)
+    # github_repos15_hook = models.BooleanField(default=False)
+    # github_repos16_hook = models.BooleanField(default=False)
+    # github_repos17_hook = models.BooleanField(default=False)
+    # github_repos18_hook = models.BooleanField(default=False)
+    # github_repos19_hook = models.BooleanField(default=False)
+    # github_repos20_hook = models.BooleanField(default=False)
+
     # """
 
     @classmethod
@@ -149,7 +155,7 @@ class Account(models.Model):
                 account.language = settings.LANGUAGE_CODE
             else:
                 account.language = translation.get_language_from_request(request, check_path=True)
-
+        # account.github_token = github_token
         account.save()
         if create_email and account.user.email:
             kwargs = {"primary": True}
@@ -198,7 +204,6 @@ def user_post_save(sender, **kwargs):
 
 @python_2_unicode_compatible
 class AnonymousAccount(object):
-
     def __init__(self, request=None):
         self.user = AnonymousUser()
         self.timezone = settings.TIME_ZONE
@@ -213,7 +218,6 @@ class AnonymousAccount(object):
 
 @python_2_unicode_compatible
 class SignupCode(models.Model):
-
     class AlreadyExists(Exception):
         pass
 
@@ -324,7 +328,6 @@ class SignupCode(models.Model):
 
 
 class SignupCodeResult(models.Model):
-
     signup_code = models.ForeignKey(SignupCode)
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     timestamp = models.DateTimeField(default=timezone.now)
@@ -336,7 +339,6 @@ class SignupCodeResult(models.Model):
 
 @python_2_unicode_compatible
 class EmailAddress(models.Model):
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     email = models.EmailField(max_length=254, unique=settings.ACCOUNT_EMAIL_UNIQUE)
     verified = models.BooleanField(_("verified"), default=False)
@@ -387,7 +389,6 @@ class EmailAddress(models.Model):
 
 @python_2_unicode_compatible
 class EmailConfirmation(models.Model):
-
     email_address = models.ForeignKey(EmailAddress)
     created = models.DateTimeField(default=timezone.now)
     sent = models.DateTimeField(null=True)
@@ -410,6 +411,7 @@ class EmailConfirmation(models.Model):
     def key_expired(self):
         expiration_date = self.sent + datetime.timedelta(days=settings.ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS)
         return expiration_date <= timezone.now()
+
     key_expired.boolean = True
 
     def confirm(self):
@@ -443,7 +445,6 @@ class EmailConfirmation(models.Model):
 
 
 class AccountDeletion(models.Model):
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     email = models.EmailField(max_length=254)
     date_requested = models.DateTimeField(_("date requested"), default=timezone.now)
