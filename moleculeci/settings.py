@@ -143,6 +143,7 @@ INSTALLED_APPS = [
 
     # project
     "moleculeci",
+    # "foyer",
 ]
 
 # A sample logging configuration. The only tangible logging

@@ -238,6 +238,7 @@ class GithubReposForm(forms.Form):  # need find an efficient and dynamic way to 
             repos_hook = GithubHooks.objects.get(github_repos=repos)
             self.fields["repos%d_hook" % i] = forms.BooleanField(label='Hooked', required=False,
                                                                  initial=repos_hook.repos_hook)
+            # print(i, repos.repos_name, repos_hook.repos_hook)
             i += 1
 
 
