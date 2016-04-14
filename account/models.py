@@ -77,6 +77,26 @@ class GithubHooks(models.Model):
 
 
 @python_2_unicode_compatible
+class ReposStatus(models.Model):
+    """
+    Repos status module. one to one database. one repo has one status
+    """
+    github_repos = models.OneToOneField(GithubRepos, related_name="repos_status", verbose_name="github_repos",
+                                        on_delete=models.CASCADE)
+    # Github repos related to the user
+    repos_status = models.TextField(null=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        repos_status = cls(**kwargs)
+        repos_status.save()
+        return repos_status
+
+    def __str__(self):
+        return "%s %s" % (str(self.github_repos), self.repos_status)
+
+
+@python_2_unicode_compatible
 class Account(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name="account", verbose_name=_("user"))
     timezone = TimeZoneField(_("timezone"))
@@ -88,6 +108,7 @@ class Account(models.Model):
     )
     birthday = models.DateField(null=True)  # add birthday here
     github_token = models.CharField(max_length=255, null=True)
+    test_repos_name = models.CharField(max_length=255, null=True)
 
     @classmethod
     def for_request(cls, request):

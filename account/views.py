@@ -7,10 +7,13 @@ import os
 import os.path
 import subprocess
 
+import foyer
 import git
 import re
 
 import sys
+
+import pytest
 from git import remote
 from git import Repo
 from hashlib import sha1
@@ -37,7 +40,7 @@ from account.forms import SettingsForm
 from account.hooks import hookset
 from account.mixins import LoginRequiredMixin
 from account.models import SignupCode, EmailAddress, EmailConfirmation, Account, AccountDeletion, GithubRepos, \
-    GithubHooks
+    GithubHooks, ReposStatus
 from account.utils import default_redirect, get_form_data
 
 from github import Github
@@ -1093,12 +1096,10 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
     # def hooked_command(self, form):  # git command for hooked repo
 
     def update_github_hooks(self, form):  # user github library here, collect all repos from github
-        print(form.cleaned_data["github_hooked_repo"],
-              form.cleaned_data["github_hooked_command"])  # show which repo and which command
         # hooked_repo_number = form.cleaned_data["github_hooked_repo"]
         hooked_repo_command = form.cleaned_data["github_hooked_command"]
-        print(dict(form.fields["github_hooked_repo"].choices)[
-                  form.cleaned_data["github_hooked_repo"]])  # show hooked_repo_name
+        print("***Repos:", dict(form.fields["github_hooked_repo"].choices)[form.cleaned_data["github_hooked_repo"]],
+              "Command:", form.cleaned_data["github_hooked_command"])  # show hooked_repo_name and command
         hooked_repo_name = dict(form.fields["github_hooked_repo"].choices)[form.cleaned_data["github_hooked_repo"]]
         rw_dir = "default/home/path/ffci_repos"
         if sys.platform == "linux":
@@ -1106,11 +1107,11 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
         elif sys.platform == "win32":
             rw_dir = "E:/Users/TengyuMa/iModels/ffci_repos"
         repo_path = os.path.join(rw_dir, hooked_repo_name)
-        print(repo_path)
+        print("***Repos path:", repo_path)
         account = self.request.user.account
         github_token = account.github_token  # get github personal accessing token
         g = Github(login_or_token=github_token)  # github api based on personal token
-        print(g.get_user().get_repo(hooked_repo_name).clone_url)
+        print("***Repos url:", g.get_user().get_repo(hooked_repo_name).clone_url)
         # hooked_repo_url = g.get_user().get_repo(hooked_repo_name).url
         hooked_repo_clone_url = g.get_user().get_repo(hooked_repo_name).clone_url  # hooked_repo url
         if not os.path.exists(repo_path):  # check already existed or not
@@ -1118,22 +1119,64 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
                                               to_path=repo_path)  # clone hooked_repo to local
         else:
             hooked_repo = Repo(repo_path)
+
+        account = self.request.user.account
+        account.test_repos_name = hooked_repo_name
+        account.save()
+        repos_status_text = "Repos status"
+        if ReposStatus.objects.filter(github_repos__repos_name=hooked_repo_name).exists():
+            repos_status = ReposStatus.objects.get(github_repos__repos_name=hooked_repo_name)
+        else:
+            hooked_repo_object = GithubRepos.objects.get(repos_name=hooked_repo_name)
+            repos_status = ReposStatus.create(github_repos=hooked_repo_object, repos_status=repos_status_text)
+
         if hooked_repo_command == "clone":
-            print("clone automatically :P")
+            repos_status_text = "Git clone %s\nClone automatically : P\nRepos path: " % hooked_repo_clone_url, repo_path
+            print(type(repos_status_text))
+            repos_status.repos_status = "".join(repos_status_text)
+            repos_status.save()
+            print("".join(repos_status_text))
         if hooked_repo_command == "pull":
             hooked_repo.remote().pull()
+            repos_status_text = "Pull successfully : )"
+            repos_status.repos_status = "".join(repos_status_text)
+            repos_status.save()
+            print("".join(repos_status_text))
         if hooked_repo_command == "push":
             # hooked_repo.remote().push()
-            print("We need some algorithms to decide how to modify our local repo, then we can git push")
+            repos_status_text = "We need some algorithms to decide how to modify our local repos, then we can git push"
+            repos_status.repos_status = "".join(repos_status_text)
+            repos_status.save()
+            print("".join(repos_status_text))
         if hooked_repo_command == "add":
             # hooked_repo.git.add()
-            print("We need some algorithms to decide how to modify our local repo, then we can git add")
+            repos_status_text = "We need some algorithms to decide how to modify our local repos, then we can git add"
+            repos_status.repos_status = "".join(repos_status_text)
+            repos_status.save()
+            print("".join(repos_status_text))
         if hooked_repo_command == "rm":
-            print("We need some algorithms to decide how to modify our local repo, then we can git rm")
+            repos_status_text = "We need some algorithms to decide how to modify our local repos, then we can git rm"
+            repos_status.repos_status = "".join(repos_status_text)
+            repos_status.save()
+            print("".join(repos_status_text))
             # hooked_repo.git.rm()
         if hooked_repo_command == "commit":
             # hooked_repo.git.commit()
-            print("We need some algorithms to decide how to modify our local repo, then we can git commit")
+            repos_status_text = "We need some algorithms to decide how to modify our local repos, then we can git commit"
+            repos_status.repos_status = "".join(repos_status_text)
+            repos_status.save()
+            print("".join(repos_status_text))
+        if hooked_repo_command == "test":
+            path = os.path.split(foyer.__file__)[0]
+            test_path = os.path.join(path, "tests/test_opls.py")
+            print(test_path)
+            cmd = "python -m pytest %s" % test_path  # use command line to run test
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, )  # run test
+            repos_status_text = proc.communicate()[0].decode()  # get result .decode change byte to str
+            repos_status.repos_status = repos_status_text
+            repos_status.save()
+            print("".join(repos_status_text))
+            # repos_status_text = pytest.main([test_path]).to_bytes()  # don't konw how to get result from this function
 
     def get_redirect_field_name(self):
         return self.redirect_field_name

@@ -17,7 +17,7 @@ from django.contrib.auth import get_user_model
 
 from account.conf import settings
 from account.hooks import hookset
-from account.models import EmailAddress, Account, GithubRepos, GithubHooks
+from account.models import EmailAddress, Account, GithubRepos, GithubHooks, ReposStatus
 from account.utils import get_user_lookup_kwargs
 
 from crispy_forms.helper import FormHelper
@@ -252,6 +252,7 @@ def get_command_choices():
     add = ("add", "Add localed changes")
     rm = ("rm", "Remove localed changes")
     commit = ("commit", "Commit changes")
+    test = ("test", "Run test_opls.py in foyer")
     command_choice = (
         clone,
         pull,
@@ -259,6 +260,7 @@ def get_command_choices():
         add,
         rm,
         commit,
+        test,
     )
     # my_choice = git_choice
     return command_choice
@@ -272,13 +274,16 @@ class GithubHooksForm(forms.Form):
         i = 0
         for hooks in hooks_list:
             if hooks.repos_hook:
-                # print(hooks.repos_hook)
-                # print(GithubRepos.objects.get(github_hooks=hooks))
                 hooks_choices = ("repos%d" % i, GithubRepos.objects.get(github_hooks=hooks).repos_name)
                 final_choices = final_choices + (hooks_choices,)
                 i += 1
         self.fields["github_hooked_repo"] = forms.ChoiceField(choices=final_choices, required=False)
         self.fields["github_hooked_command"] = forms.ChoiceField(choices=get_command_choices(), required=False)
+        test_repos_name = Account.objects.get(user=user).test_repos_name
+        if ReposStatus.objects.filter(github_repos__repos_name=test_repos_name).exists():
+            repos_status = ReposStatus.objects.get(github_repos__repos_name=test_repos_name).repos_status
+        self.fields["repos_status"] = forms.CharField(required=False, initial=repos_status,
+                                                      widget=forms.Textarea(attrs={'readonly': 'readonly'}))
 
 
 class GithubHooksBackendForm(forms.Form):
