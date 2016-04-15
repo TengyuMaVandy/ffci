@@ -19,7 +19,7 @@ from git import Repo
 from hashlib import sha1
 
 from django.http import Http404, HttpResponseForbidden, HttpResponse, JsonResponse
-from django.shortcuts import redirect, get_object_or_404, render
+from django.shortcuts import redirect, get_object_or_404, render, render_to_response
 from django.utils.http import base36_to_int, int_to_base36
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -907,6 +907,7 @@ class GithubReposView(FormView):  # handle github repos dynamically
         form = self.form_class(self.request.user, request.POST)
         if form.is_valid():
             self.form_valid(form)
+            form = self.form_class(user=self.request.user, initial=self.initial)  # refresh form
         return render(request, self.template_name, {'form': form})
 
     def get_initial(self):
@@ -1003,10 +1004,12 @@ class GithubReposView(FormView):  # handle github repos dynamically
                             print("hook.config doesn't have url")
             i += 1
         repos_name = [repos.repos_name for repos in GithubRepos.objects.filter(user=self.request.user)]
+        print(repos_name)
         # repos = [repos for repos in GithubRepos.objects.filter(user=self.request.user)]
         if repos_field:
+            print(len(repos_field))
             for k, v in repos_field.items():
-                # print(k, v)
+                print(k, v)
                 if v in repos_name:
                     for repos in GithubRepos.objects.filter(user=self.request.user):
                         if v == repos.repos_name:
@@ -1015,9 +1018,11 @@ class GithubReposView(FormView):  # handle github repos dynamically
                             repos_hook = GithubHooks.objects.get(github_repos=repos)
                             # look for the same repo in form, then get the repo_hook
                             # because the reops'order of get_repos from github is different from the repos'order of form
-                            for i in range(0, len(repos_field) - 1):
+                            for i in range(0, len(repos_field)):
+                                print("***", v, form.cleaned_data["repos%d" % i])
                                 if v == form.cleaned_data["repos%d" % i]:
                                     repos_hook.repos_hook = form.cleaned_data["repos%d_hook" % i]
+                                    print(i, repos.repos_name, repos_hook.repos_hook)
                                     repos.save()
                                     repos_hook.save()
                 else:
@@ -1056,6 +1061,7 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
         form = self.form_class(self.request.user, request.POST)
         if form.is_valid():
             self.form_valid(form)
+            form = self.form_class(user=self.request.user, initial=self.initial)  # refresh form
         return render(request, self.template_name, {'form': form})
 
     def get_initial(self):  # need more efficient and dynamic way to do this!

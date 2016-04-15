@@ -270,7 +270,8 @@ class GithubHooksForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
         super(GithubHooksForm, self).__init__(*args, **kwargs)
         hooks_list = [hooks_list for hooks_list in GithubHooks.objects.filter(github_repos__user=user)]
-        final_choices = ()
+        final_choices = ()  # initial value
+        repos_status = ""  # initial value
         i = 0
         for hooks in hooks_list:
             if hooks.repos_hook:
