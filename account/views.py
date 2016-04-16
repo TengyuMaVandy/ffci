@@ -963,51 +963,55 @@ class GithubReposView(FormView):  # handle github repos dynamically
         hook_events = ["push", "pull_request"]
         repos_field = {}
         i = 0
+        repos_list = [repos_list for repos_list in GithubRepos.objects.filter(user=self.request.user)]
+        # get exited repos from database
         # handle webhooks with github api. Refresh hooked situation to github.
         for repo in g.get_user().get_repos(type="owner"):
-            # print(repo.name)
+            print(i, repo.name)
             # print(g.get_user().get_repo(repo.name).get_hooks())
             repos_field["repos%d" % i] = repo.name
             hooks_list = [hooks_list for hooks_list in g.get_user().get_repo(repo.name).get_hooks()]
-            if "repos%d_hook" % i in form.cleaned_data:
-                # fields["github_repos%d_hook" % i] = form.cleaned_data["repos%d_hook" % i]  test new model
-                if form.cleaned_data["repos%d_hook" % i]:
-                    print("create hook")
-                    print("check existed hooks")
-                    """ handle hook automatically with github """
-                    if [hook for hook in hooks_list]:  # check existed hooks
-                        for hook in hooks_list:  # check existed hooks with our server
-                            hook_config_url_list = hook_config_url_list + [hook.config["url"], ]
-                        print(hook_config_url_list)
-                        if server_url in hook_config_url_list:
-                            print("Hook already exists")
+            for j in range(0, len(repos_list)):
+                if repo.name == form.cleaned_data["repos%d" % j]: 
+                    # print(repo.name)
+                    # fields["github_repos%d_hook" % i] = form.cleaned_data["repos%d_hook" % i]  test new model
+                    if form.cleaned_data["repos%d_hook" % j]:
+                        print("create hook")
+                        print("check existed hooks")
+                        """ handle hook automatically with github """
+                        if [hook for hook in hooks_list]:  # check existed hooks
+                            for hook in hooks_list:  # check existed hooks with our server
+                                hook_config_url_list = hook_config_url_list + [hook.config["url"], ]
+                            print(hook_config_url_list)
+                            if server_url in hook_config_url_list:
+                                print("Hook already exists")
+                            else:
+                                g.get_user().get_repo(repo.name).create_hook(name=hook_name, config=hook_config,
+                                                                             active=hook_active, events=hook_events)
+                                print("create successfully")
                         else:
+                            print("no existed hooks, create a new one")
                             g.get_user().get_repo(repo.name).create_hook(name=hook_name, config=hook_config,
                                                                          active=hook_active, events=hook_events)
-                            print("create successfully")
+                            print("no hooks before, create successfully")
                     else:
-                        print("no existed hooks, create a new one")
-                        g.get_user().get_repo(repo.name).create_hook(name=hook_name, config=hook_config,
-                                                                     active=hook_active, events=hook_events)
-                        print("no hooks before, create successfully")
-                else:
-                    print("delete hook")
-                    for hook in hooks_list:  # handle delete hooks
-                        # print(hook.config)
-                        if "url" in hook.config:
-                            if server_url == hook.config["url"]:
-                                g.get_user().get_repo(repo.name).get_hook(id=hook.id).delete()
-                                print("delete successfully")
+                        print("delete hook")
+                        for hook in hooks_list:  # handle delete hooks
+                            # print(hook.config)
+                            if "url" in hook.config:
+                                if server_url == hook.config["url"]:
+                                    g.get_user().get_repo(repo.name).get_hook(id=hook.id).delete()
+                                    print("delete successfully")
+                                else:
+                                    print("no hook to delete")
                             else:
-                                print("no hook to delete")
-                        else:
-                            print("hook.config doesn't have url")
+                                print("hook.config doesn't have url")
             i += 1
         repos_name = [repos.repos_name for repos in GithubRepos.objects.filter(user=self.request.user)]
         print(repos_name)
         # repos = [repos for repos in GithubRepos.objects.filter(user=self.request.user)]
         if repos_field:
-            print(len(repos_field))
+            print("***", len(repos_field))
             for k, v in repos_field.items():
                 print(k, v)
                 if v in repos_name:
@@ -1019,7 +1023,8 @@ class GithubReposView(FormView):  # handle github repos dynamically
                             # look for the same repo in form, then get the repo_hook
                             # because the reops'order of get_repos from github is different from the repos'order of form
                             for i in range(0, len(repos_field)):
-                                print("***", v, form.cleaned_data["repos%d" % i])
+                                print("***", i)
+                                print("***", i, v, form.cleaned_data["repos%d" % i])
                                 if v == form.cleaned_data["repos%d" % i]:
                                     repos_hook.repos_hook = form.cleaned_data["repos%d_hook" % i]
                                     print(i, repos.repos_name, repos_hook.repos_hook)
