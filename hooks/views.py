@@ -49,7 +49,7 @@ def index(request):
             repos_status.repos_status = repos_status_text
             repos_status.save()
             print("".join(repos_status_text))
-            return JsonResponse({'msg': "".join(repos_status_text)})
+            return JsonResponse({'msg': repos_status_text})  # need escape \n in Json
         if request.META.get('HTTP_X_GITHUB_EVENT') == "pull_request":  # handle pull request
             return JsonResponse({'msg': "Do some algorithms for pull"})
         return HttpResponse('OK')
