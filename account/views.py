@@ -967,12 +967,11 @@ class GithubReposView(FormView):  # handle github repos dynamically
         # get exited repos from database
         # handle webhooks with github api. Refresh hooked situation to github.
         for repo in g.get_user().get_repos(type="owner"):
-            print(i, repo.name)
             # print(g.get_user().get_repo(repo.name).get_hooks())
             repos_field["repos%d" % i] = repo.name
             hooks_list = [hooks_list for hooks_list in g.get_user().get_repo(repo.name).get_hooks()]
             for j in range(0, len(repos_list)):
-                if repo.name == form.cleaned_data["repos%d" % j]: 
+                if repo.name == form.cleaned_data["repos%d" % j]:
                     # print(repo.name)
                     # fields["github_repos%d_hook" % i] = form.cleaned_data["repos%d_hook" % i]  test new model
                     if form.cleaned_data["repos%d_hook" % j]:
@@ -1008,12 +1007,10 @@ class GithubReposView(FormView):  # handle github repos dynamically
                                 print("hook.config doesn't have url")
             i += 1
         repos_name = [repos.repos_name for repos in GithubRepos.objects.filter(user=self.request.user)]
-        print(repos_name)
         # repos = [repos for repos in GithubRepos.objects.filter(user=self.request.user)]
         if repos_field:
-            print("***", len(repos_field))
             for k, v in repos_field.items():
-                print(k, v)
+                # print(k, v)
                 if v in repos_name:
                     for repos in GithubRepos.objects.filter(user=self.request.user):
                         if v == repos.repos_name:
@@ -1023,8 +1020,7 @@ class GithubReposView(FormView):  # handle github repos dynamically
                             # look for the same repo in form, then get the repo_hook
                             # because the reops'order of get_repos from github is different from the repos'order of form
                             for i in range(0, len(repos_field)):
-                                print("***", i)
-                                print("***", i, v, form.cleaned_data["repos%d" % i])
+                                # print("*** ", i, v, form.cleaned_data["repos%d" % i])
                                 if v == form.cleaned_data["repos%d" % i]:
                                     repos_hook.repos_hook = form.cleaned_data["repos%d_hook" % i]
                                     print(i, repos.repos_name, repos_hook.repos_hook)
@@ -1109,7 +1105,7 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
     def update_github_hooks(self, form):  # user github library here, collect all repos from github
         # hooked_repo_number = form.cleaned_data["github_hooked_repo"]
         hooked_repo_command = form.cleaned_data["github_hooked_command"]
-        print("***Repos:", dict(form.fields["github_hooked_repo"].choices)[form.cleaned_data["github_hooked_repo"]],
+        print("*** Repos:", dict(form.fields["github_hooked_repo"].choices)[form.cleaned_data["github_hooked_repo"]],
               "Command:", form.cleaned_data["github_hooked_command"])  # show hooked_repo_name and command
         hooked_repo_name = dict(form.fields["github_hooked_repo"].choices)[form.cleaned_data["github_hooked_repo"]]
         rw_dir = "default/home/path/ffci_repos"
@@ -1118,11 +1114,11 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
         elif sys.platform == "win32":
             rw_dir = "E:/Users/TengyuMa/iModels/ffci_repos"
         repo_path = os.path.join(rw_dir, hooked_repo_name)
-        print("***Repos path:", repo_path)
+        print("*** Repos path:", repo_path)
         account = self.request.user.account
         github_token = account.github_token  # get github personal accessing token
         g = Github(login_or_token=github_token)  # github api based on personal token
-        print("***Repos url:", g.get_user().get_repo(hooked_repo_name).clone_url)
+        print("*** Repos url:", g.get_user().get_repo(hooked_repo_name).clone_url)
         # hooked_repo_url = g.get_user().get_repo(hooked_repo_name).url
         hooked_repo_clone_url = g.get_user().get_repo(hooked_repo_name).clone_url  # hooked_repo url
         if not os.path.exists(repo_path):  # check already existed or not
@@ -1182,7 +1178,7 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
             test_path = os.path.join(path, "tests/test_opls.py")
             print(test_path)
             cmd = "python -m pytest %s" % test_path  # use command line to run test
-            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, )  # run test
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,)  # run test
             repos_status_text = proc.communicate()[0].decode()  # get result .decode change byte to str
             repos_status.repos_status = repos_status_text
             repos_status.save()
