@@ -63,3 +63,6 @@ target/
 
 #swm file
 *.swm
+
+#workspace
+**/.idea/workspace.xml
