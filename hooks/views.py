@@ -17,6 +17,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 # REPOS_JSON_PATH = os.environ['FLASK_GITHUB_WEBHOOK_REPOS_JSON']
+from git import Repo
+
 from account.models import ReposStatus, GithubRepos
 
 
@@ -34,9 +36,20 @@ def index(request):
         if request.META.get('HTTP_X_GITHUB_EVENT') == "ping":  # handle ping test
             return JsonResponse({'msg': 'Hi!'})
         if request.META.get('HTTP_X_GITHUB_EVENT') == "push":  # handle push
+            # look for opls_test path
             path = os.path.split(foyer.__file__)[0]
             test_path = os.path.join(path, "tests/test_opls.py")
             print(test_path)
+            # look for test repo
+            hooked_repo_name = "opls_test"
+            rw_dir = "default/home/path/ffci_repos"
+            if sys.platform == "linux":
+                rw_dir = "/home/tengyuma/ffci_repos"
+            elif sys.platform == "win32":
+                rw_dir = "E:/Users/TengyuMa/iModels/ffci_repos"
+            repo_path = os.path.join(rw_dir, hooked_repo_name)
+            hooked_repo = Repo(repo_path)
+            hooked_repo.remote().pull()  # update test repo
             cmd = "python -m pytest %s" % test_path  # use command line to run test
             proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,)  # run test
             repos_status_text = proc.communicate()[0].decode()  # get result .decode change byte to str
