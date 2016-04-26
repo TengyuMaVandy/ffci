@@ -96,7 +96,7 @@ class IndexView(View):
         return super(IndexView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        return render(request, self.template_name)
+        return render(request, self.template_name, content_type="image/svg+xml")
 
     def post(self, request, *args, **kwargs):
         if request.META.get('HTTP_X_GITHUB_EVENT') == "ping":  # handle ping test
