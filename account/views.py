@@ -871,7 +871,10 @@ class GithubAuthView(FormView):  # need modify GithubAuthView in the future
     def update_github_auth(self, form):
         fields = {}
         if "github_token" in form.cleaned_data:
-            fields["github_token"] = form.cleaned_data["github_token"]
+            github_token = form.cleaned_data["github_token"]
+            fields["github_token"] = github_token
+            g = Github(login_or_token=github_token)
+            fields["github_name"] = g.get_user().login
         if fields:
             account = self.request.user.account
             for k, v in fields.items():
@@ -1019,7 +1022,7 @@ class GithubReposView(FormView):  # handle github repos dynamically
                             repos_hook = GithubHooks.objects.get(github_repos=repos)
                             # look for the same repo in form, then get the repo_hook
                             # because the reops'order of get_repos from github is different from the repos'order of form
-                            for i in range(0, len(repos_field)):
+                            for i in range(0, int(len(form.cleaned_data)/2)):
                                 # print("*** ", i, v, form.cleaned_data["repos%d" % i])
                                 if v == form.cleaned_data["repos%d" % i]:
                                     repos_hook.repos_hook = form.cleaned_data["repos%d_hook" % i]
@@ -1180,6 +1183,8 @@ class GithubHooksView(FormView):  # Handle github hooks dynamically
             cmd = "python -m pytest %s" % test_path  # use command line to run test
             proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,)  # run test
             repos_status_text = proc.communicate()[0].decode()  # get result .decode change byte to str
+
+            # save repos status
             repos_status.repos_status = repos_status_text
             repos_status.save()
             print("".join(repos_status_text))

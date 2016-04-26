@@ -1,8 +1,10 @@
 from django.conf.urls import url
 
+from hooks.views import IndexView, StatusTagView
 from . import views
 
 urlpatterns = [
-    # ex: /polls/
-    url(r'^$', views.index, name='index'),
+    # ex: /hooks/
+    url(r'^$', IndexView.as_view(), name='index'),
+    url(r"^status_tag.svg/$", StatusTagView.as_view(), name="status_tag")
 ]

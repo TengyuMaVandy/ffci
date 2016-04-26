@@ -272,6 +272,9 @@ class GithubHooksForm(forms.Form):
         hooks_list = [hooks_list for hooks_list in GithubHooks.objects.filter(github_repos__user=user)]
         final_choices = ()  # initial value
         repos_status = ""  # initial value
+        repos_commit_sha = ""  # initial value
+        repos_commit_time = ""  # initial value
+        repos_commit_message = ""  # initial value
         i = 0
         for hooks in hooks_list:
             if hooks.repos_hook:
@@ -283,6 +286,16 @@ class GithubHooksForm(forms.Form):
         test_repos_name = Account.objects.get(user=user).test_repos_name
         if ReposStatus.objects.filter(github_repos__repos_name=test_repos_name).exists():
             repos_status = ReposStatus.objects.get(github_repos__repos_name=test_repos_name).repos_status
+            repos_commit_sha = ReposStatus.objects.get(github_repos__repos_name=test_repos_name).repos_commit_sha
+            repos_commit_time = ReposStatus.objects.get(github_repos__repos_name=test_repos_name).repos_commit_time
+            repos_commit_message = ReposStatus.objects.get(
+                github_repos__repos_name=test_repos_name).repos_commit_message
+        self.fields["commit_sha"] = forms.CharField(required=False, initial=repos_commit_sha,
+                                                      widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+        self.fields["commit_time"] = forms.CharField(required=False, initial=repos_commit_time,
+                                                      widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+        self.fields["commit_message"] = forms.CharField(required=False, initial=repos_commit_message,
+                                                      widget=forms.TextInput(attrs={'readonly': 'readonly'}))
         self.fields["repos_status"] = forms.CharField(required=False, initial=repos_status,
                                                       widget=forms.Textarea(attrs={'readonly': 'readonly'}))
 

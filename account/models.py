@@ -81,9 +81,14 @@ class ReposStatus(models.Model):
     """
     Repos status module. one to one database. one repo has one status
     """
+    # Github repos related to the user
     github_repos = models.OneToOneField(GithubRepos, related_name="repos_status", verbose_name="github_repos",
                                         on_delete=models.CASCADE)
-    # Github repos related to the user
+    # Github commit info
+    repos_commit_sha = models.CharField(max_length=255, null=True)
+    repos_commit_time = models.CharField(max_length=255, null=True)
+    repos_commit_message = models.CharField(max_length=255, null=True)
+    # Github repos status
     repos_status = models.TextField(null=True)
 
     @classmethod
@@ -107,6 +112,7 @@ class Account(models.Model):
         default=settings.LANGUAGE_CODE
     )
     birthday = models.DateField(null=True)  # add birthday here
+    github_name = models.CharField(max_length=255, null=True)
     github_token = models.CharField(max_length=255, null=True)
     test_repos_name = models.CharField(max_length=255, null=True)
 
