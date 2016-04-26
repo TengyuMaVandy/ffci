@@ -99,31 +99,32 @@ class IndexView(View):
         return render(request, self.template_name)
 
     def post(self, request, *args, **kwargs):
-        payload = json.loads(request.body.decode())
-        # parse json to get info of repos & commit
-        repo_meta = {
-            'repo_author': payload['commits'][0]['author']['name'],
-            'repo_name': payload['repository']['name'],
-            'html_url': payload['repository']['html_url'],
-            'repos_commit_sha': payload['commits'][0]['id'],
-            'repos_commit_time': payload['commits'][0]['timestamp'],
-            'repos_commit_message': payload['commits'][0]['message'],
-        }
-        author_name = repo_meta['repo_author']
-        author_account_set = Account.objects.filter(github_name=author_name)
-        author_token = author_account_set[0].github_token
-        repo_name = repo_meta['repo_name']
-        print("*** Trigger by git webhook ***")
-        print("author: ", repo_meta['repo_author'])
-        print("repo name: ", repo_meta['repo_name'])
-        print("html url: ", repo_meta['html_url'])
-        print("commit sha: ", repo_meta['repos_commit_sha'])
-        print("commit time: ", repo_meta['repos_commit_time'])
-        print("commit message: ", repo_meta['repos_commit_message'])
-        print("*** Update repos ***")
         if request.META.get('HTTP_X_GITHUB_EVENT') == "ping":  # handle ping test
             return JsonResponse({'msg': 'Hi!'})
         if request.META.get('HTTP_X_GITHUB_EVENT') == "push":  # handle push
+            payload = json.loads(request.body.decode())
+            # parse json to get info of repos & commit
+            repo_meta = {
+                'repo_author': payload['commits'][0]['author']['name'],
+                'repo_name': payload['repository']['name'],
+                'html_url': payload['repository']['html_url'],
+                'repos_commit_sha': payload['commits'][0]['id'],
+                'repos_commit_time': payload['commits'][0]['timestamp'],
+                'repos_commit_message': payload['commits'][0]['message'],
+            }
+            author_name = repo_meta['repo_author']
+            author_account_set = Account.objects.filter(github_name=author_name)
+            author_token = author_account_set[0].github_token
+            repo_name = repo_meta['repo_name']
+            print("*** Trigger by git webhook ***")
+            print("author: ", repo_meta['repo_author'])
+            print("repo name: ", repo_meta['repo_name'])
+            print("html url: ", repo_meta['html_url'])
+            print("commit sha: ", repo_meta['repos_commit_sha'])
+            print("commit time: ", repo_meta['repos_commit_time'])
+            print("commit message: ", repo_meta['repos_commit_message'])
+            
+            print("*** Update repos ***")
             # look for opls_test path
             path = os.path.split(foyer.__file__)[0]
             test_path = os.path.join(path, "tests/test_opls.py")
