@@ -105,7 +105,7 @@ class IndexView(View):
             payload = json.loads(request.body.decode())
             # parse json to get info of repos & commit
             repo_meta = {
-                'repo_author': payload['commits'][0]['author']['name'],
+                'repo_author': payload['commits'][0]['author']['username'],
                 'repo_name': payload['repository']['name'],
                 'html_url': payload['repository']['html_url'],
                 'repos_commit_sha': payload['commits'][0]['id'],
